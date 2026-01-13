@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/task.dart';
+import 'add_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -8,12 +10,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // dummy list sementara (nanti diganti storage)
-  List<String> tasks = [
-    "Belajar Flutter",
-    "Kerjakan Tugas PPB",
-    "Istirahat"
+  // sekarang pakai List<Task>, bukan List<String>
+  List<Task> tasks = [
+    Task(title: "Belajar Flutter", description: "Mengerjakan project PPB"),
+    Task(title: "Kerjakan Tugas PPB"),
+    Task(title: "Istirahat"),
   ];
+
+  Future<void> _navigateToAddTask() async {
+    final newTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddTaskScreen(),
+      ),
+    );
+
+    if (newTask != null) {
+      setState(() {
+        tasks.add(newTask);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // nanti diarahkan ke Add Task
-        },
+        onPressed: _navigateToAddTask,
         child: const Icon(Icons.add),
       ),
 
@@ -41,10 +56,41 @@ class _HomeScreenState extends State<HomeScreen> {
           : ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
+                final task = tasks[index];
+
                 return Card(
                   child: ListTile(
-                    leading: const Icon(Icons.check_box_outline_blank),
-                    title: Text(tasks[index]),
+                    leading: Icon(
+                      task.isCompleted
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                    ),
+                    title: Text(
+                      task.title,
+                      style: TextStyle(
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+                    subtitle: task.description != null || task.dueDate != null
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (task.description != null)
+                                Text(task.description!),
+                              if (task.dueDate != null)
+                                Text(
+                                  "Deadline: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}",
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                            ],
+                          )
+                        : null,
+                    onTap: () {
+                      // nanti dipakai buat edit / toggle selesai
+                    },
                   ),
                 );
               },
