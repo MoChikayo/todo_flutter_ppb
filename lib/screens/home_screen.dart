@@ -5,6 +5,12 @@ import '../models/task.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
 
+enum TaskFilter {
+  all,
+  completed,
+  pending,
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -14,6 +20,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Task> tasks = [];
+  TaskFilter _currentFilter = TaskFilter.all;
+
+  List<Task> get _filteredTasks {
+    switch (_currentFilter) {
+      case TaskFilter.completed:
+       
+        return tasks.where((t) => t.isCompleted).toList();
+
+      case TaskFilter.pending:
+        
+        return tasks.where((t) => !t.isCompleted).toList();
+
+      case TaskFilter.all:
+      default:
+        final copy = List<Task>.from(tasks);
+        copy.sort((a, b) {
+          if (a.isCompleted == b.isCompleted) return 0;
+          if (a.isCompleted && !b.isCompleted) return 1; 
+          return -1; 
+        });
+        return copy;
+    }
+  }
 
   @override
   void initState() {
@@ -130,13 +159,68 @@ Future<void> _saveTasksToLocal() async {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             )
+              : Column(
+        children: [
+          const SizedBox(height: 8),
+          // ROW FILTER
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text("Semua"),
+                  selected: _currentFilter == TaskFilter.all,
+                  onSelected: (_) {
+                    setState(() {
+                      _currentFilter = TaskFilter.all;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text("Selesai"),
+                  selected: _currentFilter == TaskFilter.completed,
+                  onSelected: (_) {
+                    setState(() {
+                      _currentFilter = TaskFilter.completed;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text("Belum"),
+                  selected: _currentFilter == TaskFilter.pending,
+                  onSelected: (_) {
+                    setState(() {
+                      _currentFilter = TaskFilter.pending;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          // LIST TASK TERFILTER
+          Expanded(
+            child: _filteredTasks.isEmpty
+                ? const Center(
+                    child: Text(
+                      "Tidak ada task untuk filter ini",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  )
           : ListView.builder(
-              itemCount: tasks.length,
+              itemCount: _filteredTasks.length,
               itemBuilder: (context, index) {
-                final task = tasks[index];
+                final task = _filteredTasks[index];
+                final originalIndex = tasks.indexOf(task);
 
               return Dismissible(
-                key: ValueKey("${task.title}-$index"),
+                key: ValueKey("${task.title}-$originalIndex"),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   color: Colors.red,
@@ -148,14 +232,14 @@ Future<void> _saveTasksToLocal() async {
                   ),
                 ),
                 onDismissed: (direction) {
-                  _deleteTask(index);
+                  _deleteTask(originalIndex);
                 },
                 child: Card(
                   child: ListTile(
                     leading: Checkbox(
                       value: task.isCompleted,
                       onChanged: (value) =>
-                          _toggleTaskCompleted(index, value),
+                          _toggleTaskCompleted(originalIndex, value),
                     ),
                     title: Text(
                       task.title,
@@ -182,21 +266,24 @@ Future<void> _saveTasksToLocal() async {
                             ],
                           )
                         : null,
-                    onTap: () => _navigateToEditTask(task, index),
+                    onTap: () => _navigateToEditTask(task, originalIndex),
                         trailing: IconButton(
                         icon: const Icon(
                           Icons.delete,
                           color: Colors.red,
                       ),
                     onPressed: () {
-                    _deleteTask(index);
+                    _deleteTask(originalIndex);
                   },
+                  ),
                 ),
               ),
-              ),
-              );
-            },
+            );
+          },
           ),
+         ),
+        ],
+      ),
     );
   }
 }
