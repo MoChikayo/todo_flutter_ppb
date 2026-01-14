@@ -183,8 +183,17 @@ Future<void> _saveTasksToLocal() async {
                           )
                         : null,
                     onTap: () => _navigateToEditTask(task, index),
-                  ),
+                        trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                      ),
+                    onPressed: () {
+                    _deleteTask(index);
+                  },
                 ),
+              ),
+              ),
               );
             },
           ),
