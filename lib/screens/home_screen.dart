@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import 'add_task_screen.dart';
+import 'edit_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // sekarang pakai List<Task>, bukan List<String>
   List<Task> tasks = [
     Task(title: "Belajar Flutter", description: "Mengerjakan project PPB"),
     Task(title: "Kerjakan Tugas PPB"),
@@ -30,6 +30,50 @@ class _HomeScreenState extends State<HomeScreen> {
         tasks.add(newTask);
       });
     }
+  }
+  
+  Future<void> _navigateToEditTask(Task task, int index) async {
+    final updatedTask = await Navigator.push<Task>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTaskScreen(task: task),
+      ),
+    );
+
+    if (updatedTask != null) {
+      setState(() {
+        tasks[index] = updatedTask;
+      });
+    }
+  }
+
+  void _toggleTaskCompleted(int index, bool? value) {
+    setState(() {
+      tasks[index].isCompleted = value ?? false;
+    });
+  }
+
+  void _deleteTask(int index) {
+    final deletedTask = tasks[index];
+
+    setState(() {
+      tasks.removeAt(index);
+    });
+
+    // Snackbar undo (bonus UX)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Task "${deletedTask.title}" dihapus'),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () {
+            setState(() {
+              tasks.insert(index, deletedTask);
+            });
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -58,13 +102,28 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final task = tasks[index];
 
-                return Card(
-                  child: ListTile(
-                    leading: Icon(
-                      task.isCompleted
-                          ? Icons.check_box
-                          : Icons.check_box_outline_blank,
+                return Dismissible(
+                  key: ValueKey("${task.title}-$index"),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
                     ),
+                  ),
+                  onDismissed: (direction) {
+                    _deleteTask(index);
+                  },
+                  child: Card(
+                    child: ListTile(
+                      leading: Checkbox(
+                        value: task.isCompleted,
+                        onChanged: (value) =>
+                            _toggleTaskCompleted(index, value),
+                      ),
                     title: Text(
                       task.title,
                       style: TextStyle(
@@ -85,12 +144,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: const TextStyle(
                                       fontSize: 12, color: Colors.grey),
                                 ),
+                              
                             ],
                           )
                         : null,
-                    onTap: () {
-                      // nanti dipakai buat edit / toggle selesai
-                    },
+                    onTap: () => _navigateToEditTask(task, index),
+                    ),
                   ),
                 );
               },
