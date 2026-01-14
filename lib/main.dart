@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Init Hive
+  await Hive.initFlutter();
+
+  // Buka box untuk tasks
+  await Hive.openBox('tasksBox');
+
   runApp(const MyApp());
 }
 
