@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../services/notification_service.dart';
 
 import '../models/task.dart';
 import 'add_task_screen.dart';
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return tasks.where((t) => !t.isCompleted).toList();
 
       case TaskFilter.all:
-      default:
+      
         final copy = List<Task>.from(tasks);
         copy.sort((a, b) {
           if (a.isCompleted == b.isCompleted) return 0;
@@ -87,6 +88,8 @@ Future<void> _saveTasksToLocal() async {
         tasks.add(newTask);
       });
       await _saveTasksToLocal();
+      await notificationService.scheduleTaskReminder(newTask);
+
     }
   }
   
@@ -103,6 +106,7 @@ Future<void> _saveTasksToLocal() async {
         tasks[index] = updatedTask;
       });
       await _saveTasksToLocal();
+      await notificationService.scheduleTaskReminder(updatedTask);
     }
   }
 
@@ -122,6 +126,7 @@ Future<void> _saveTasksToLocal() async {
     await _saveTasksToLocal();
 
     // Snackbar undo (bonus UX)
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Task "${deletedTask.title}" dihapus'),
@@ -257,11 +262,9 @@ Future<void> _saveTasksToLocal() async {
                                 Text(task.description!),
                               if (task.dueDate != null)
                                 Text(
-                                  "Deadline: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}",
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
+                                  "Deadline: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year} "
+                                  "${task.dueDate!.hour.toString().padLeft(2, '0')}:${task.dueDate!.minute.toString().padLeft(2, '0')}",
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
                             ],
                           )

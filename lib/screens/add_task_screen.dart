@@ -14,7 +14,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  DateTime? _selectedDate;
+  DateTime? _selectedDateTime;
 
   @override
   void dispose() {
@@ -30,28 +30,53 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
-        dueDate: _selectedDate,
+        dueDate: _selectedDateTime, // <-- kirim full DateTime ke Task
       );
 
-      // kirim Task balik ke HomeScreen
       Navigator.pop(context, newTask);
     }
   }
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
+  Future<void> _pickDueDateTime() async {
+    // pilih tanggal dulu
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: now.subtract(const Duration(days: 365)),
-      lastDate: now.add(const Duration(days: 365 * 5)),
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
-    }
+    if (pickedDate == null) return;
+
+    // lalu pilih jam
+    if (!mounted) return;
+    final pickedTime = await showTimePicker(
+      
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime == null) return;
+
+    setState(() {
+      _selectedDateTime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+    });
+  }
+
+  String _formatDeadline(DateTime dateTime) {
+    final dd = dateTime.day.toString().padLeft(2, '0');
+    final mm = dateTime.month.toString().padLeft(2, '0');
+    final yyyy = dateTime.year;
+    final hh = dateTime.hour.toString().padLeft(2, '0');
+    final min = dateTime.minute.toString().padLeft(2, '0');
+
+    return "$dd/$mm/$yyyy  $hh:$min";
   }
 
   @override
@@ -93,15 +118,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      _selectedDate == null
-                          ? "Tidak ada tanggal"
-                          : "Deadline: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}",
+                      _selectedDateTime == null
+                          ? "Tidak ada deadline"
+                          : "Deadline: ${_formatDeadline(_selectedDateTime!)}",
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: _pickDate,
+                    onPressed: _pickDueDateTime, // <-- pakai picker baru
                     icon: const Icon(Icons.calendar_today),
-                    label: const Text("Pilih Tanggal"),
+                    label: const Text("Pilih Tanggal & Waktu"),
                   ),
                 ],
               ),
