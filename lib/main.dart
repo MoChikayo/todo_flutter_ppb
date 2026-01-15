@@ -4,6 +4,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'services/notification_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:provider/provider.dart';
+
+import 'controllers/theme_controller.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -18,7 +22,12 @@ Future<void> main() async {
 
   await notificationService.init();
   
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeController(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -26,10 +35,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeController = Provider.of<ThemeController>(context);
+
     return MaterialApp(
       title: 'To-Do List App',
       debugShowCheckedModeBanner: false,
+      themeMode: themeController.themeMode,
       theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.blue,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
         primarySwatch: Colors.blue,
       ),
       home: const HomeScreen(),

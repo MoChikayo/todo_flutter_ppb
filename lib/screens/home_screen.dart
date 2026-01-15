@@ -5,6 +5,8 @@ import '../services/notification_service.dart';
 import '../models/task.dart';
 import 'add_task_screen.dart';
 import 'edit_task_screen.dart';
+import 'package:provider/provider.dart';
+import '../controllers/theme_controller.dart';
 
 enum TaskFilter {
   all,
@@ -149,7 +151,18 @@ Future<void> _saveTasksToLocal() async {
       appBar: AppBar(
         title: const Text("My To-Do List"),
         centerTitle: true,
-        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Provider.of<ThemeController>(context).themeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed: () {
+              Provider.of<ThemeController>(context, listen: false).toggleTheme();
+            },
+          ),
+        ],
       ),
 
       floatingActionButton: FloatingActionButton(
